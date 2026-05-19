@@ -1,2 +1,2 @@
-﻿n=input("Enter")
+n=input("Enter")
 cout<<n

@@ -1,0 +1,121 @@
+Quantum Language — Test Results (in progress)
+Generated : 2026-05-19 19:54:08
+Directory : D:\QuantumLogics\Quantum
+Total     : 56   (running...)
+========================================================================
+
+[PASS] Quantum\data\01-basic\01-what-is-quantum\example1.sa
+
+[PASS] Quantum\data\01-basic\01-what-is-quantum\example2.sa
+
+[PASS] Quantum\data\01-basic\02-installation\example1.sa
+
+[PASS] Quantum\data\01-basic\02-installation\example2.sa
+
+[PASS] Quantum\data\01-basic\03-first-program\example1.sa
+
+[PASS] Quantum\data\01-basic\03-first-program\example2.sa
+
+[PASS] Quantum\data\01-basic\04-input-output\example1.sa
+
+[PASS] Quantum\data\01-basic\04-input-output\example2.sa
+
+[PASS] Quantum\data\01-basic\05-mixed-syntax\example1.sa
+
+[PASS] Quantum\data\01-basic\05-mixed-syntax\example2.sa
+
+[PASS] Quantum\data\01-basic\06-variables\example1.sa
+
+[PASS] Quantum\data\01-basic\06-variables\example2.sa
+
+[PASS] Quantum\data\01-basic\07-conditions\example1.sa
+
+[PASS] Quantum\data\01-basic\07-conditions\example2.sa
+
+[PASS] Quantum\data\01-basic\08-loops\example1.sa
+
+[PASS] Quantum\data\01-basic\08-loops\example2.sa
+
+[PASS] Quantum\data\01-basic\09-functions\example1.sa
+
+[PASS] Quantum\data\01-basic\09-functions\example2.sa
+
+[PASS] Quantum\data\01-basic\10-beginner-projects\example1.sa
+
+[PASS] Quantum\data\01-basic\10-beginner-projects\example2.sa
+
+[PASS] Quantum\data\02-intermediate\01-memory-sharing\example1.sa
+
+[PASS] Quantum\data\02-intermediate\01-memory-sharing\example2.sa
+
+[PASS] Quantum\data\02-intermediate\02-language-communication\example1.sa
+
+[PASS] Quantum\data\02-intermediate\02-language-communication\example2.sa
+
+[PASS] Quantum\data\02-intermediate\03-file-handling\example1.sa
+
+[PASS] Quantum\data\02-intermediate\03-file-handling\example2.sa
+
+[PASS] Quantum\data\02-intermediate\04-modules\example1.sa
+
+[PASS] Quantum\data\02-intermediate\04-modules\example2.sa
+
+[PASS] Quantum\data\02-intermediate\05-error-handling\example1.sa
+
+[PASS] Quantum\data\02-intermediate\05-error-handling\example2.sa
+
+[PASS] Quantum\data\02-intermediate\06-python-cpp-integration\example1.sa
+
+[PASS] Quantum\data\02-intermediate\06-python-cpp-integration\example2.sa
+
+[PASS] Quantum\data\02-intermediate\07-python-c-integration\example1.sa
+
+[PASS] Quantum\data\02-intermediate\07-python-c-integration\example2.sa
+
+[PASS] Quantum\data\02-intermediate\08-advanced-mixing\example1.sa
+
+[PASS] Quantum\data\02-intermediate\08-advanced-mixing\example2.sa
+
+[PASS] Quantum\data\02-intermediate\09-intermediate-projects\example1.sa
+
+[PASS] Quantum\data\02-intermediate\09-intermediate-projects\example2.sa
+
+[PASS] Quantum\data\03-advanced\01-runtime-system\example1.sa
+
+[PASS] Quantum\data\03-advanced\01-runtime-system\example2.sa
+
+[PASS] Quantum\data\03-advanced\02-execution-engine\example1.sa
+
+[PASS] Quantum\data\03-advanced\02-execution-engine\example2.sa
+
+[PASS] Quantum\data\03-advanced\03-performance\example1.sa
+
+[PASS] Quantum\data\03-advanced\03-performance\example2.sa
+
+[PASS] Quantum\data\03-advanced\04-ai-integration\example1.sa
+
+[PASS] Quantum\data\03-advanced\04-ai-integration\example2.sa
+
+[PASS] Quantum\data\03-advanced\05-web-integration\example1.sa
+
+[PASS] Quantum\data\03-advanced\05-web-integration\example2.sa
+
+[PASS] Quantum\data\03-advanced\06-api-development\example1.sa
+
+[PASS] Quantum\data\03-advanced\06-api-development\example2.sa
+
+[PASS] Quantum\data\03-advanced\07-custom-modules\example1.sa
+
+[PASS] Quantum\data\03-advanced\07-custom-modules\example2.sa
+
+[PASS] Quantum\data\03-advanced\08-compiler-internals\example1.sa
+
+[PASS] Quantum\data\03-advanced\08-compiler-internals\example2.sa
+
+[PASS] Quantum\data\03-advanced\09-advanced-projects\example1.sa
+
+[PASS] Quantum\data\03-advanced\09-advanced-projects\example2.sa
+
+========================================================================
+Result: ALL PASSED (56/56)
+Passed : 56   Failed : 0   Total : 56

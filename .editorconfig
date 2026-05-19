@@ -1,0 +1,15 @@
+# Quantum source files — UTF-8 without BOM (required by qrun / quantum lexer)
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+
+[*.sa]
+charset = utf-8
+indent_style = space
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = true
