@@ -8,14 +8,18 @@ let compression;
 try {
   compression = require("compression");
 } catch (e) {
-  console.warn("⚠️  Compression module not found. Run: npm install compression");
+  console.warn(
+    "⚠️  Compression module not found. Run: npm install compression",
+  );
 }
 
 let rateLimit;
 try {
   rateLimit = require("express-rate-limit");
 } catch (e) {
-  console.warn("⚠️  Rate limiting module not found. Run: npm install express-rate-limit");
+  console.warn(
+    "⚠️  Rate limiting module not found. Run: npm install express-rate-limit",
+  );
 }
 
 // ─── OpenAPI Spec ─────────────────────────────────────────────────────────────
@@ -98,7 +102,11 @@ if (compression) {
 
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://127.0.0.1:3000"],
+    origin: [
+      "https://code.quantumlogicslimited.com",
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+    ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -167,7 +175,7 @@ app.use("/api/documents", documentRoutes);
 const playgroundRoutes = require("./src/modules/playground/playground.route");
 app.use("/api/playground", playgroundRoutes);
 
-const challengeRoutes = require('./src/routes/challenge')
+const challengeRoutes = require("./src/routes/challenge");
 app.use("/api/challenges", challengeRoutes);
 
 // Backward compatibility for older frontend builds requesting /languages directly
@@ -176,7 +184,11 @@ app.get("/languages", (req, res) => {
 });
 
 app.get("/api/health", (req, res) => {
-  res.json({ status: "OK", timestamp: new Date().toISOString(), message: "Backend is running" });
+  res.json({
+    status: "OK",
+    timestamp: new Date().toISOString(),
+    message: "Backend is running",
+  });
 });
 
 if (process.env.NODE_ENV === "production") {
