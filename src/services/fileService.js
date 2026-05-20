@@ -66,7 +66,7 @@ async function getFileInfo(filePath, relativePath, options = {}) {
 
     const baseInfo = {
       title: path.basename(filePath, ext),
-      path: relativePath,
+      path: normalizedPath,
       category: category,
       fileType: fileType,
       size: stats.size,
