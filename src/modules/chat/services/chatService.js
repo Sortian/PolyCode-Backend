@@ -1,5 +1,5 @@
 const AssistantConversation = require("../models/AssistantConversation");
-const { ASSISTANT_SYSTEM_PROMPT } = require("../assistantSystemPrompt");
+const { buildSystemPrompt } = require("../assistantSystemPrompt");
 const { generateAssistantReply } = require("./groqService");
 
 const MAX_HISTORY_MESSAGES = 10;
@@ -18,8 +18,35 @@ function normalizeHistory(history = []) {
     .slice(-MAX_HISTORY_MESSAGES);
 }
 
-function buildGroqMessages(history, userMessage) {
-  const messages = [{ role: "system", content: ASSISTANT_SYSTEM_PROMPT }];
+function sanitizeContext(context) {
+  if (!context || typeof context !== "object") return {};
+  const allowed = [
+    "mode",
+    "page",
+    "route",
+    "language",
+    "course",
+    "lessonId",
+    "lessonTitle",
+    "chapter",
+    "tab",
+    "code",
+    "error",
+    "challengeDescription",
+  ];
+  const out = {};
+  for (const key of allowed) {
+    if (context[key] != null && String(context[key]).trim()) {
+      out[key] = String(context[key]).slice(0, key === "code" ? 4000 : 2000);
+    }
+  }
+  return out;
+}
+
+function buildGroqMessages(history, userMessage, context = {}) {
+  const messages = [
+    { role: "system", content: buildSystemPrompt(sanitizeContext(context)) },
+  ];
 
   for (const entry of history) {
     messages.push({ role: entry.role, content: entry.content });
@@ -55,6 +82,7 @@ async function sendAssistantMessage({
   history = [],
   sessionId,
   userId = null,
+  context = {},
 }) {
   const trimmedMessage = String(message || "").trim();
   if (!trimmedMessage) {
@@ -70,7 +98,11 @@ async function sendAssistantMessage({
   }
 
   const normalizedHistory = normalizeHistory(history);
-  const groqMessages = buildGroqMessages(normalizedHistory, trimmedMessage);
+  const groqMessages = buildGroqMessages(
+    normalizedHistory,
+    trimmedMessage,
+    context,
+  );
   const reply = await generateAssistantReply(groqMessages);
 
   const conversation = await findOrCreateConversation(sessionId, userId);

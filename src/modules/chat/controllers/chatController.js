@@ -18,13 +18,19 @@ function handleError(res, error, fallbackStatus = 500) {
 
 async function assistantChat(req, res) {
   try {
-    const { message, history = [], session_id: sessionId = "" } = req.body || {};
+    const {
+      message,
+      history = [],
+      session_id: sessionId = "",
+      context = {},
+    } = req.body || {};
 
     const result = await chatService.sendAssistantMessage({
       message,
       history,
       sessionId: String(sessionId).trim(),
       userId: req.userId || null,
+      context,
     });
 
     return res.json(result);
