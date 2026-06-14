@@ -1,60 +1,34 @@
-# JavaScript Learning Data
+# PolyCode JavaScript Certificate Course
 
-This directory contains all the learning materials for the JavaScript programming course, organized by topic categories similar to the Python and C++ course structures.
+A structured, numbered learning path from **beginner to mastery** — designed for the PolyCode Docs Hub and certificate completion.
 
-## 📁 Directory Structure
+## Start here
 
-### 🚀 Getting Started
-- **01-introduction.md** - Introduction to JavaScript, setup, first program
-- **02-javascript-basics.md** - Variables, data types, operators
-- **03-control-flow.md** - Conditionals, loops, functions
-- **04-functions-scope.md** - Function declarations, closures, scope
+1. Open **[00-certification / Course roadmap](00-certification/00-roadmap.md)** for the full learning path
+2. Begin **Module 01 — Beginner** and follow lessons in order
+3. After Module 05, complete the **[final assessment](00-certification/02-final-assessment.md)**
 
-### 🧠 Core Concepts
-- **05-arrays-objects.md** - Arrays, objects, destructuring
-- **06-es6-features.md** - Arrow functions, template literals, destructuring
-- **07-async-programming.md** - Promises, async/await, callbacks
-- **08-dom-manipulation.md** - DOM selection, manipulation, events
-- **09-error-handling.md** - Try-catch, error types, debugging
+## Course modules (in order)
 
-### 🌐 Web Development
-- **10-fetch-api-ajax.md** - HTTP requests, APIs, data fetching
-- **11-modern-javascript.md** - ES2020+, modules, tooling
-- **12-browser-apis.md** - LocalStorage, SessionStorage, Web APIs
-- **13-performance.md** - Optimization, lazy loading, web workers
+| Module | Folder | Level | Lessons |
+|--------|--------|-------|---------|
+| 00 | `00-certification` | Overview | Roadmap, requirements, exam |
+| 01 | `01-beginner` | Beginner | 8 lessons |
+| 02 | `02-intermediate` | Intermediate | 5 lessons |
+| 03 | `03-advanced` | Advanced | 7 lessons |
+| 04 | `04-professional` | Professional | 7 lessons |
+| 05 | `05-mastery` | Mastery | 4 lessons |
 
-### 🏗️ Frameworks & Libraries
-- **14-react-basics.md** - React fundamentals, components, state
-- **15-nodejs.md** - Server-side JavaScript, NPM, Express
-- **16-typescript.md** - Type safety, interfaces, generics
+## What you will learn
 
-### ⚡ Advanced Topics
-- **17-design-patterns.md** - Common JavaScript patterns
-- **18-testing.md** - Unit testing, integration testing
-- **19-security.md** - XSS, CSRF, secure coding
-- **20-deployment.md** - Build tools, CI/CD, deployment
+- **Beginner:** syntax, variables, functions, arrays, objects
+- **Intermediate:** ES6+, DOM, async code, classes
+- **Advanced:** closures, prototypes, modules, performance, security
+- **Professional:** Node.js, Express, React, testing
+- **Mastery:** algorithms, data structures, capstone projects
 
-### 💡 Examples
-- **21-practical-projects.md** - Real-world JavaScript applications
-- **22-code-examples.md** - Interactive code examples
-- **23-best-practices.md** - Code quality, conventions
+## Certificate
 
-### 🚀 Projects
-- **24-project-ideas.md** - Project suggestions and templates
-- **25-portfolio-projects.md** - Complete portfolio projects
+Complete all modules, build at least 3 projects, and pass the final assessment (70%+). See [certificate requirements](00-certification/01-certificate-requirements.md).
 
-### 📚 Resources
-- **26-documentation.md** - MDN, official docs, references
-- **27-tools-resources.md** - Development tools, IDEs, extensions
-- **28-community.md** - Forums, communities, learning resources
-
----
-
-Each section contains:
-- **Comprehensive documentation** with detailed explanations
-- **Code examples** demonstrating practical applications
-- **Exercises** to reinforce learning
-- **Projects** to build real-world applications
-- **Best practices** for professional development
-
-The course progresses from basic JavaScript concepts to advanced web development, preparing you for modern JavaScript development in both frontend and backend environments.
+Each lesson includes examples and exercises. Run `.js` files in Node.js or the PolyCode Playground where available.
