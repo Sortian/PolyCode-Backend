@@ -91,6 +91,8 @@ const defaultAllowedOrigins = [
   // defaultAllowedOrigins is an array of allowed origins
   "https://code.quantumlogicslimited.com",
   "https://www.code.quantumlogicslimited.com",
+  "https://quantumlogicslimited.com",
+  "https://www.quantumlogicslimited.com",
   "https://digital-logics-studio.vercel.app",
   "https://poly-code-frontend-iota.vercel.app",
   "http://localhost:3000",
@@ -136,10 +138,36 @@ const isAllowedOrigin = (origin) => {
   return false;
 };
 
+const CORS_METHODS = "GET,POST,PUT,DELETE,PATCH,OPTIONS";
+const CORS_HEADERS = "Content-Type, Authorization, X-Requested-With";
+
+function applyCorsHeaders(req, res) {
+  const origin = req.headers.origin;
+  if (!origin || !isAllowedOrigin(origin)) return false;
+
+  const normalizedOrigin = normalizeOrigin(origin);
+  res.setHeader("Access-Control-Allow-Origin", normalizedOrigin);
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Vary", "Origin");
+  return true;
+}
+
+// Handle preflight and attach CORS headers before any other middleware.
+app.use((req, res, next) => {
+  applyCorsHeaders(req, res);
+
+  if (req.method === "OPTIONS") {
+    res.setHeader("Access-Control-Allow-Methods", CORS_METHODS);
+    res.setHeader("Access-Control-Allow-Headers", CORS_HEADERS);
+    res.setHeader("Access-Control-Max-Age", "86400");
+    return res.sendStatus(204);
+  }
+
+  return next();
+});
+
 const corsOptions = {
-  // corsOptions is an object that contains the options for the cors middleware
   origin(origin, callback) {
-    // Server-to-server tools (curl, health checks) omit Origin.
     if (!origin) return callback(null, true);
 
     if (isAllowedOrigin(origin)) {
@@ -147,7 +175,7 @@ const corsOptions = {
     }
 
     console.warn(`🚫 CORS blocked origin: ${origin}`);
-    return callback(new Error(`CORS: Origin ${origin} is not allowed`));
+    return callback(null, false);
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
@@ -181,7 +209,6 @@ app.use(cors(corsOptions));
 app.options(/.*/, cors(corsOptions));
 
 app.use(express.json({ limit: "2mb" }));
-app.use("/certificates", express.static("uploads/certificates"));
 
 app.use(express.urlencoded({ extended: true }));
 
@@ -257,9 +284,15 @@ app.use("/api/challenges", challengeRoutes);
 const chatRoutes = require("./src/modules/chat/chat.router");
 app.use("/api/chat", requireMongoConnection, chatRoutes);
 
-// 👇 add here
-const certificateRoutes = require("./src/routes/Certificates.js");
-app.use("/api/certificates", certificateRoutes);
+// Certificate uploads are optional — a missing dependency must not take down auth/API.
+try {
+  const certificateRoutes = require("./src/routes/Certificates.js");
+  app.use("/certificates", express.static(path.join(__dirname, "uploads/certificates")));
+  app.use("/api/certificates", certificateRoutes);
+  console.log("✅ Certificate routes enabled");
+} catch (error) {
+  console.warn("⚠️  Certificate routes disabled:", error.message);
+}
 // Backward compatibility for older frontend builds requesting /languages directly
 app.get("/languages", (req, res) => {
   return res.redirect(307, "/api/documents/languages");
@@ -295,13 +328,27 @@ if (process.env.NODE_ENV === "production" && !process.env.VERCEL) {
   });
 }
 
+app.use((err, req, res, next) => {
+  applyCorsHeaders(req, res);
+  console.error("Unhandled error:", err?.message || err);
+
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  const status = err?.status || 500;
+  return res.status(status).json({
+    error: err?.message || "Internal server error",
+  });
+});
+
 // ─── Start ────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 
-// Vercel runs Express as a serverless function — export the app, do not call listen().
-if (process.env.VERCEL) {
-  module.exports = app;
-} else {
+module.exports = app;
+
+// Only bind a port when executed directly (`node server.js`), not on Vercel serverless.
+if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`🚀  Server:    http://localhost:${PORT}`);
     console.log(`📖  API Docs:  http://localhost:${PORT}/api-docs`);

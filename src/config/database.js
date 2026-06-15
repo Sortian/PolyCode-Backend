@@ -5,7 +5,8 @@ const DEFAULT_DB_NAME = process.env.MONGODB_DB || "polycode";
 const PLACEHOLDER_URI = "add_your_mongodb_uri_here";
 
 // Router DNS on Windows often refuses SRV lookups required by mongodb+srv:// URIs.
-if (process.env.MONGODB_DNS !== "system") {
+// Vercel and most cloud runtimes should use system DNS for Atlas.
+if (process.env.MONGODB_DNS !== "system" && !process.env.VERCEL) {
   dns.setServers(["8.8.8.8", "1.1.1.1", "8.8.4.4"]);
 }
 
@@ -164,6 +165,10 @@ async function connectToMongoDB() {
  * Express middleware — wait for DB before auth/progress routes run.
  */
 async function requireMongoConnection(req, res, next) {
+  if (req.method === "OPTIONS" || req.method === "HEAD") {
+    return next();
+  }
+
   try {
     const conn = await connectToMongoDB();
     if (!conn) {
