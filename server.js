@@ -209,7 +209,6 @@ app.use(cors(corsOptions));
 app.options(/.*/, cors(corsOptions));
 
 app.use(express.json({ limit: "2mb" }));
-app.use("/certificates", express.static("uploads/certificates"));
 
 app.use(express.urlencoded({ extended: true }));
 
@@ -285,9 +284,15 @@ app.use("/api/challenges", challengeRoutes);
 const chatRoutes = require("./src/modules/chat/chat.router");
 app.use("/api/chat", requireMongoConnection, chatRoutes);
 
-// 👇 add here
-const certificateRoutes = require("./src/routes/Certificates.js");
-app.use("/api/certificates", certificateRoutes);
+// Certificate uploads are optional — a missing dependency must not take down auth/API.
+try {
+  const certificateRoutes = require("./src/routes/Certificates.js");
+  app.use("/certificates", express.static(path.join(__dirname, "uploads/certificates")));
+  app.use("/api/certificates", certificateRoutes);
+  console.log("✅ Certificate routes enabled");
+} catch (error) {
+  console.warn("⚠️  Certificate routes disabled:", error.message);
+}
 // Backward compatibility for older frontend builds requesting /languages directly
 app.get("/languages", (req, res) => {
   return res.redirect(307, "/api/documents/languages");
