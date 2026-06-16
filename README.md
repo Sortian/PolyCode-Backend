@@ -29,22 +29,6 @@ npm install
 
 Copy `.env.example` to `.env` and configure:
 
-```env
-# Server Configuration
-PORT=5000
-NODE_ENV=development
-
-# Data Folder Path (where documentation lives)
-# Default: Looks for data folder relative to backend directory
-# PYTHON_PATH=C:\Users\YourName\Documents\Python\data
-
-# Optional Settings
-MAX_SCAN_DEPTH=3
-INCLUDE_FILE_TYPES=.py,.md,.txt,.js,.html,.css
-EXCLUDE_DIRS=node_modules,venv,__pycache__,.git
-VERBOSE_LOGGING=false
-```
-
 ## 🚦 Running the Server
 
 ```bash
