@@ -6,8 +6,6 @@ src/runtime/tmp/**
 uploads/**
 experiments/**
 scripts/**
-*.md
-!README.md
 api-docs.html
 logo.png
 _remote_server.js
