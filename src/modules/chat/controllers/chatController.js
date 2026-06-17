@@ -1,4 +1,5 @@
 const chatService = require("../services/chatService");
+const promptExportService = require("../services/promptExportService");
 
 function handleError(res, error, fallbackStatus = 500) {
   const statusCode = error.statusCode || fallbackStatus;
@@ -60,13 +61,7 @@ async function getAssistantSession(req, res) {
 
     return res.json({
       sessionId: conversation.sessionId,
-      messages: conversation.messages.map((m) => ({
-        role: m.role,
-        content: m.content,
-        createdAt: m.createdAt,
-        clientMessageId: m.clientMessageId || null,
-        feedback: m.feedback || null,
-      })),
+      messages: conversation.messages,
       updatedAt: conversation.updatedAt,
     });
   } catch (error) {
@@ -79,10 +74,9 @@ async function listConversations(req, res) {
     const conversations = await chatService.listUserConversations(req.userId);
     return res.json({
       conversations: conversations.map((c) => ({
-        id: c._id,
         sessionId: c.sessionId,
-        messageCount: c.messages.length,
-        lastMessage: c.messages[c.messages.length - 1] || null,
+        messageCount: c.messageCount,
+        lastMessage: c.lastMessage,
         updatedAt: c.updatedAt,
         createdAt: c.createdAt,
       })),
@@ -135,9 +129,50 @@ async function submitAssistantFeedback(req, res) {
       userId: req.userId || null,
     });
 
+    if (process.env.GOOGLE_DRIVE_AUTO_EXPORT_PROMPTS === "true") {
+      promptExportService
+        .exportPromptsToDrive({ since: new Date(Date.now() - 24 * 60 * 60 * 1000) })
+        .catch((err) => {
+          console.warn("Prompts auto-export to Drive skipped:", err.message);
+        });
+    }
+
     return res.json(result);
   } catch (error) {
     return handleError(res, error, 400);
+  }
+}
+
+async function listPromptsExport(req, res) {
+  try {
+    const { userId, sessionId, ratedOnly, since, limit } = req.query || {};
+    const prompts = await promptExportService.fetchCleanPrompts({
+      userId,
+      sessionId,
+      ratedOnly: ratedOnly === "true" || ratedOnly === "1",
+      since,
+      limit,
+    });
+
+    return res.json(promptExportService.buildExportPayload(prompts));
+  } catch (error) {
+    return handleError(res, error, 400);
+  }
+}
+
+async function exportPromptsToDrive(req, res) {
+  try {
+    const { userId, sessionId, ratedOnly, since, limit } = req.body || req.query || {};
+    const result = await promptExportService.exportPromptsToDrive({
+      userId,
+      sessionId,
+      ratedOnly: ratedOnly === true || ratedOnly === "true" || ratedOnly === "1",
+      since,
+      limit,
+    });
+    return res.json(result);
+  } catch (error) {
+    return handleError(res, error, 503);
   }
 }
 
@@ -147,4 +182,6 @@ module.exports = {
   listConversations,
   clearAssistantSession,
   submitAssistantFeedback,
+  listPromptsExport,
+  exportPromptsToDrive,
 };

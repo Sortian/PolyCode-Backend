@@ -95,6 +95,19 @@ function isDriveConfigured() {
 
 function formatDriveError(error) {
   const message = error?.message || "";
+  const responseError = error?.response?.data?.error || "";
+
+  if (
+    message.includes("invalid_grant") ||
+    responseError === "invalid_grant"
+  ) {
+    return (
+      "Google Drive OAuth refresh token is invalid or expired. " +
+      "Re-run: node scripts/google-drive-oauth-setup.js — sign in, copy the new " +
+      "GOOGLE_DRIVE_OAUTH_REFRESH_TOKEN into .env, restart the backend, then export again. " +
+      "Ensure CLIENT_ID, CLIENT_SECRET, and REFRESH_TOKEN are from the same OAuth setup."
+    );
+  }
   if (
     message.includes("storage quota") ||
     message.includes("Service Accounts do not have")
@@ -165,8 +178,53 @@ function buildDriveThumbnailUrl(fileId) {
 }
 
 /**
- * Stream a Drive file through the backend (reliable for <img src>).
+ * Upload a JSON or text file to Google Drive.
+ * @returns {Promise<{ fileId: string, webViewLink: string, name: string }>}
  */
+async function uploadDriveFile({ buffer, mimeType, fileName, folderId }) {
+  const parentId =
+    folderId?.trim() ||
+    process.env.GOOGLE_DRIVE_PROMPTS_FOLDER_ID?.trim() ||
+    process.env.GOOGLE_DRIVE_FOLDER_ID?.trim();
+
+  if (!parentId) {
+    throw new Error(
+      "GOOGLE_DRIVE_FOLDER_ID or GOOGLE_DRIVE_PROMPTS_FOLDER_ID is required.",
+    );
+  }
+
+  const { drive, mode } = getDriveClient();
+
+  const createParams = {
+    requestBody: {
+      name: fileName,
+      parents: [parentId],
+    },
+    media: {
+      mimeType,
+      body: Readable.from(buffer),
+    },
+    fields: "id, webViewLink, name",
+  };
+
+  if (mode === "service_account") {
+    createParams.supportsAllDrives = true;
+  }
+
+  let file;
+  try {
+    file = await drive.files.create(createParams);
+  } catch (error) {
+    throw new Error(formatDriveError(error));
+  }
+
+  return {
+    fileId: file.data.id,
+    webViewLink: file.data.webViewLink || buildDriveThumbnailUrl(file.data.id),
+    name: file.data.name || fileName,
+  };
+}
+
 async function streamDriveFile(fileId) {
   const { drive, mode } = getDriveClient();
   const getParams = { fileId, fields: "mimeType" };
@@ -189,6 +247,7 @@ async function streamDriveFile(fileId) {
 
 module.exports = {
   uploadProfileImage,
+  uploadDriveFile,
   streamDriveFile,
   buildDriveThumbnailUrl,
   isDriveConfigured,

@@ -1,10 +1,9 @@
-const AssistantConversation = require("../models/AssistantConversation");
-const AssistantFeedback = require("../models/AssistantFeedback");
+const mongoose = require("mongoose");
+const Prompt = require("../models/Prompt");
 const { buildSystemPrompt } = require("../assistantSystemPrompt");
 const { generateAssistantReply } = require("./groqService");
 
 const MAX_HISTORY_MESSAGES = 10;
-const MAX_STORED_MESSAGES = 50;
 
 function normalizeHistory(history = []) {
   if (!Array.isArray(history)) return [];
@@ -57,25 +56,53 @@ function buildGroqMessages(history, userMessage, context = {}) {
   return messages;
 }
 
-async function findOrCreateConversation(sessionId, userId) {
-  let conversation = await AssistantConversation.findOne({ sessionId });
+function likedToFeedback(liked) {
+  if (liked === true) return "like";
+  if (liked === false) return "dislike";
+  return null;
+}
 
-  if (!conversation) {
-    conversation = new AssistantConversation({
-      sessionId,
-      userId: userId || null,
-      messages: [],
+function ratingToLiked(rating) {
+  const normalized = String(rating || "").trim().toLowerCase();
+  if (normalized === "like") return true;
+  if (normalized === "dislike") return false;
+  return null;
+}
+
+function promptsToMessages(prompts) {
+  const messages = [];
+  for (const prompt of prompts) {
+    messages.push({
+      role: "user",
+      content: prompt.userMessage,
+      createdAt: prompt.createdAt,
     });
-    await conversation.save();
-    return conversation;
+    messages.push({
+      role: "assistant",
+      content: prompt.assistantMessage,
+      createdAt: prompt.updatedAt || prompt.createdAt,
+      clientMessageId: prompt.messageId,
+      feedback: likedToFeedback(prompt.liked),
+      liked: prompt.liked,
+    });
   }
+  return messages;
+}
 
-  if (userId && !conversation.userId) {
-    conversation.userId = userId;
-    await conversation.save();
+async function assertSessionAccess(sessionId, userId) {
+  const owner = await Prompt.findOne({ sessionId, userId: { $ne: null } })
+    .select("userId")
+    .lean();
+
+  if (
+    owner?.userId &&
+    userId &&
+    String(owner.userId) !== String(userId)
+  ) {
+    const err = new Error("Forbidden");
+    err.statusCode = 403;
+    throw err;
   }
-
-  return conversation;
 }
 
 async function sendAssistantMessage({
@@ -107,30 +134,25 @@ async function sendAssistantMessage({
   );
   const reply = await generateAssistantReply(groqMessages);
 
-  const conversation = await findOrCreateConversation(sessionId, userId);
-  const assistantEntry = {
-    role: "assistant",
-    content: reply,
-  };
-  if (assistantMessageId) {
-    assistantEntry.clientMessageId = String(assistantMessageId).slice(0, 64);
-  }
-  conversation.messages.push(
-    { role: "user", content: trimmedMessage },
-    assistantEntry,
-  );
+  const messageId =
+    String(assistantMessageId || "").trim() ||
+    `assistant-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
-  if (conversation.messages.length > MAX_STORED_MESSAGES) {
-    conversation.messages = conversation.messages.slice(-MAX_STORED_MESSAGES);
-  }
-
-  await conversation.save();
+  const prompt = await Prompt.create({
+    userId: userId || null,
+    sessionId: String(sessionId).trim(),
+    messageId: messageId.slice(0, 64),
+    userMessage: trimmedMessage,
+    assistantMessage: reply,
+    liked: null,
+    context: sanitizeContext(context),
+  });
 
   return {
     success: true,
     response: reply,
-    conversationId: conversation._id,
-    assistantMessageId: assistantMessageId || null,
+    promptId: prompt._id,
+    assistantMessageId: messageId,
   };
 }
 
@@ -145,7 +167,7 @@ async function submitAssistantFeedback({
 }) {
   const trimmedSessionId = String(sessionId || "").trim();
   const trimmedMessageId = String(messageId || "").trim();
-  const normalizedRating = String(rating || "").trim().toLowerCase();
+  const liked = ratingToLiked(rating);
 
   if (!trimmedSessionId) {
     const err = new Error("session_id is required.");
@@ -157,7 +179,7 @@ async function submitAssistantFeedback({
     err.statusCode = 400;
     throw err;
   }
-  if (!["like", "dislike"].includes(normalizedRating)) {
+  if (liked === null) {
     const err = new Error('rating must be "like" or "dislike".');
     err.statusCode = 400;
     throw err;
@@ -171,72 +193,93 @@ async function submitAssistantFeedback({
     throw err;
   }
 
-  const safeContext = sanitizeContext(context);
+  await assertSessionAccess(trimmedSessionId, userId);
 
-  await AssistantFeedback.findOneAndUpdate(
+  const prompt = await Prompt.findOneAndUpdate(
     { sessionId: trimmedSessionId, messageId: trimmedMessageId },
     {
-      sessionId: trimmedSessionId,
-      messageId: trimmedMessageId,
-      rating: normalizedRating,
-      userMessage: trimmedUserMessage.slice(0, 8000),
-      assistantMessage: trimmedAssistantMessage.slice(0, 8000),
-      context: safeContext,
-      userId: userId || null,
+      $set: {
+        liked,
+        userMessage: trimmedUserMessage.slice(0, 8000),
+        assistantMessage: trimmedAssistantMessage.slice(0, 8000),
+        context: sanitizeContext(context),
+        ...(userId ? { userId } : {}),
+      },
+      $setOnInsert: {
+        sessionId: trimmedSessionId,
+        messageId: trimmedMessageId,
+      },
     },
     { upsert: true, new: true, setDefaultsOnInsert: true },
   );
 
-  const conversation = await AssistantConversation.findOne({
-    sessionId: trimmedSessionId,
-  });
-  if (conversation) {
-    const target = conversation.messages.find(
-      (m) =>
-        m.role === "assistant" &&
-        (m.clientMessageId === trimmedMessageId ||
-          String(m._id) === trimmedMessageId),
-    );
-    if (target) {
-      target.feedback = normalizedRating;
-      await conversation.save();
-    }
-  }
-
-  return { success: true, rating: normalizedRating };
+  return {
+    success: true,
+    liked: prompt.liked,
+    rating: likedToFeedback(prompt.liked),
+  };
 }
 
 async function getConversationBySession(sessionId, userId = null) {
-  const conversation = await AssistantConversation.findOne({ sessionId });
-  if (!conversation) return null;
+  const trimmedSessionId = String(sessionId || "").trim();
+  if (!trimmedSessionId) return null;
 
-  if (
-    conversation.userId &&
-    userId &&
-    String(conversation.userId) !== String(userId)
-  ) {
-    const err = new Error("Forbidden");
-    err.statusCode = 403;
-    throw err;
-  }
+  await assertSessionAccess(trimmedSessionId, userId);
 
-  return conversation;
+  const prompts = await Prompt.find({ sessionId: trimmedSessionId }).sort({
+    createdAt: 1,
+  });
+
+  if (!prompts.length) return null;
+
+  return {
+    sessionId: trimmedSessionId,
+    messages: promptsToMessages(prompts),
+    updatedAt: prompts[prompts.length - 1].updatedAt,
+  };
 }
 
 async function listUserConversations(userId) {
-  return AssistantConversation.find({ userId })
-    .sort({ updatedAt: -1 })
-    .select("sessionId messages updatedAt createdAt")
-    .limit(50);
+  if (!userId) return [];
+
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+  const rows = await Prompt.aggregate([
+    { $match: { userId: userObjectId } },
+    { $sort: { createdAt: 1 } },
+    {
+      $group: {
+        _id: "$sessionId",
+        messageCount: { $sum: 1 },
+        lastPrompt: { $last: "$$ROOT" },
+        updatedAt: { $max: "$updatedAt" },
+        createdAt: { $min: "$createdAt" },
+      },
+    },
+    { $sort: { updatedAt: -1 } },
+    { $limit: 50 },
+  ]);
+
+  return rows.map((row) => ({
+    sessionId: row._id,
+    messageCount: row.messageCount,
+    lastMessage: {
+      role: "assistant",
+      content: row.lastPrompt.assistantMessage,
+      liked: row.lastPrompt.liked,
+    },
+    updatedAt: row.updatedAt,
+    createdAt: row.createdAt,
+  }));
 }
 
 async function clearConversation(sessionId, userId = null) {
-  const conversation = await getConversationBySession(sessionId, userId);
-  if (!conversation) return false;
+  const trimmedSessionId = String(sessionId || "").trim();
+  if (!trimmedSessionId) return false;
 
-  conversation.messages = [];
-  await conversation.save();
-  return true;
+  await assertSessionAccess(trimmedSessionId, userId);
+
+  const result = await Prompt.deleteMany({ sessionId: trimmedSessionId });
+  return result.deletedCount > 0;
 }
 
 module.exports = {

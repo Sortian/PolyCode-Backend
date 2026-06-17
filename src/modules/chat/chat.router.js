@@ -2,6 +2,7 @@ const express = require("express");
 const rateLimit = require("express-rate-limit");
 const optionalAuth = require("../../middleware/optionalAuth");
 const requireAuth = require("../../middleware/requireAuth");
+const requireExportSecret = require("../../middleware/requireExportSecret");
 const chatController = require("./controllers/chatController");
 
 const router = express.Router();
@@ -44,5 +45,17 @@ router.post(
 );
 
 router.get("/conversations", requireAuth, chatController.listConversations);
+
+router.get(
+  "/prompts",
+  requireExportSecret,
+  chatController.listPromptsExport,
+);
+
+router.post(
+  "/prompts/export-drive",
+  requireExportSecret,
+  chatController.exportPromptsToDrive,
+);
 
 module.exports = router;

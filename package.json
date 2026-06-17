@@ -12,7 +12,10 @@
     "curriculum:seed": "node scripts/seed-numbered-curriculum.js",
     "curriculum:seed:force": "node scripts/seed-numbered-curriculum.js --force",
     "curriculum:consolidate": "node scripts/consolidate-language-data.js",
-    "curriculum:consolidate:dry": "node scripts/consolidate-language-data.js --dry-run"
+    "curriculum:consolidate:dry": "node scripts/consolidate-language-data.js --dry-run",
+    "prompts:export-drive": "node scripts/export-prompts-to-drive.js",
+    "prompts:export-dry": "node scripts/export-prompts-to-drive.js --dry-run",
+    "drive:oauth-setup": "node scripts/google-drive-oauth-setup.js"
   },
   "keywords": [],
   "author": "",
