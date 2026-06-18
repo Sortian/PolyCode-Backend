@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const Prompt = require("../models/Prompt");
 const { buildSystemPrompt } = require("../assistantSystemPrompt");
-const { generateAssistantReply } = require("./groqService");
+const { generateAssistantReply } = require("../../ml/assistantModelService");
 
 const MAX_HISTORY_MESSAGES = 10;
 

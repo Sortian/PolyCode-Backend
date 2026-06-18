@@ -15,6 +15,10 @@
     "curriculum:consolidate:dry": "node scripts/consolidate-language-data.js --dry-run",
     "prompts:export-drive": "node scripts/export-prompts-to-drive.js",
     "prompts:export-dry": "node scripts/export-prompts-to-drive.js --dry-run",
+    "ml:export-training": "node scripts/export-training-data.js",
+    "ml:export-training:dry": "node scripts/export-training-data.js --dry-run",
+    "ml:sync-pinecone": "node scripts/sync-prompts-pinecone.js",
+    "ml:sync-pinecone:dry": "node scripts/sync-prompts-pinecone.js --dry-run",
     "drive:oauth-setup": "node scripts/google-drive-oauth-setup.js"
   },
   "keywords": [],

@@ -4,6 +4,7 @@ const optionalAuth = require("../../middleware/optionalAuth");
 const requireAuth = require("../../middleware/requireAuth");
 const requireExportSecret = require("../../middleware/requireExportSecret");
 const chatController = require("./controllers/chatController");
+const mlController = require("../ml/mlController");
 
 const router = express.Router();
 
@@ -56,6 +57,12 @@ router.post(
   "/prompts/export-drive",
   requireExportSecret,
   chatController.exportPromptsToDrive,
+);
+
+router.get(
+  "/ml/training-stats",
+  requireExportSecret,
+  mlController.getTrainingStats,
 );
 
 module.exports = router;
