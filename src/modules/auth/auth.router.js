@@ -16,6 +16,9 @@ router.post("/login", userController.login);
 /** GET /api/auth/me  — returns current user from Bearer token */
 router.get("/me", userController.getMe);
 
+/** GET /api/auth/username/:username */
+router.get("/username/:username", userController.getUserByUsername);
+
 /** GET /api/auth/user/:id */
 router.get("/user/:id", userController.getUserProfile);
 

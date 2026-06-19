@@ -89,6 +89,20 @@ async function getUserProfile(req, res) {
 }
 
 /**
+ * GET /api/auth/username/:username - Get public user profile by username
+ */
+async function getUserByUsername(req, res) {
+  try {
+    const { username } = req.params;
+    const user = await userService.getUserByUsername(username);
+    res.json({ user });
+  } catch (error) {
+    console.error("Get user by username error:", error.message);
+    res.status(404).json({ error: error.message });
+  }
+}
+
+/**
  * GET /api/auth/me - Get current user from JWT
  */
 async function getMe(req, res) {
@@ -290,6 +304,7 @@ module.exports = {
   login,
   getMe,
   getUserProfile,
+  getUserByUsername,
   updateProfile,
   uploadAvatar,
   getAvatarImage,

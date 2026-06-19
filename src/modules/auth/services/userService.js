@@ -87,6 +87,33 @@ async function getUserById(userId) {
 }
 
 /**
+ * Get public user profile by username
+ * @param {string} username - Username handle
+ * @returns {Promise<Object>} User object
+ */
+async function getUserByUsername(username) {
+  try {
+    const normalizedUsername = String(username || "").trim().toLowerCase();
+    if (!/^[a-z0-9_][a-z0-9_.-]{2,29}$/.test(normalizedUsername)) {
+      throw new Error("User not found");
+    }
+
+    const user = await User.findOne({
+      username: normalizedUsername,
+      isActive: true,
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    return user.toJSON();
+  } catch (error) {
+    throw error;
+  }
+}
+
+/**
  * Get user by email
  * @param {string} email - User email
  * @returns {Promise<Object>} User object
@@ -240,6 +267,7 @@ module.exports = {
   registerUser,
   loginUser,
   getUserById,
+  getUserByUsername,
   getUserByEmail,
   updateUserProfile,
   setProfilePicture,
