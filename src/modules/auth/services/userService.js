@@ -10,6 +10,50 @@ function capitalizeNamePart(value = "") {
   return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
 }
 
+const USERNAME_RE = /^[a-z0-9_][a-z0-9_.-]{2,29}$/;
+
+function slugifyUsername(value = "") {
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_.-]+/g, "_")
+    .replace(/^[^a-z0-9_]+/, "")
+    .slice(0, 29);
+}
+
+/** Older accounts may lack username — create one from email so profiles work. */
+async function ensureUsername(userDoc) {
+  if (userDoc.username && USERNAME_RE.test(userDoc.username)) {
+    return userDoc;
+  }
+
+  const emailLocal = userDoc.email?.split("@")[0] || "user";
+  let base = slugifyUsername(emailLocal);
+  if (base.length < 3) {
+    base = `user_${String(userDoc._id).slice(-6)}`;
+  }
+
+  let candidate = base;
+  let suffix = 0;
+  while (
+    await User.findOne({ username: candidate, _id: { $ne: userDoc._id } })
+  ) {
+    suffix += 1;
+    candidate = `${base.slice(0, 24)}_${suffix}`;
+  }
+
+  userDoc.username = candidate;
+  await userDoc.save();
+  return userDoc;
+}
+
+async function toPublicUser(userDoc) {
+  const withUsername = await ensureUsername(userDoc);
+  const serializedUser = withUsername.toJSON();
+  await syncPolycoderForEmailSafe(serializedUser);
+  return serializedUser;
+}
+
 /**
  * Register a new user
  * @param {Object} userData - User data (email, username, password, firstName, lastName)
@@ -37,9 +81,7 @@ async function registerUser(userData) {
     });
 
     await user.save();
-    const serializedUser = user.toJSON();
-    await syncPolycoderForEmailSafe(serializedUser);
-    return serializedUser;
+    return toPublicUser(user);
   } catch (error) {
     throw error;
   }
@@ -69,9 +111,7 @@ async function loginUser(email, password) {
     user.lastLogin = new Date();
     await user.save();
 
-    const serializedUser = user.toJSON();
-    await syncPolycoderForEmailSafe(serializedUser);
-    return serializedUser;
+    return toPublicUser(user);
   } catch (error) {
     throw error;
   }
@@ -88,9 +128,7 @@ async function getUserById(userId) {
     if (!user) {
       throw new Error("User not found");
     }
-    const serializedUser = user.toJSON();
-    await syncPolycoderForEmailSafe(serializedUser);
-    return serializedUser;
+    return toPublicUser(user);
   } catch (error) {
     throw error;
   }

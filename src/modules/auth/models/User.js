@@ -1,17 +1,9 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
+const mongoose = require("mongoose"); //Used to connect Node.js with MongoDB.
+const bcrypt = require("bcryptjs"); //Used to hash and compare passwords.
 
+// ── User schema ───────────────────────────────────────────────────────────────
 const userSchema = new mongoose.Schema(
   {
-    username: {
-      type: String,
-      required: [true, "Please provide a username"],
-      unique: true,
-      lowercase: true,
-      trim: true,
-      minlength: 3,
-      maxlength: 30,
-    },
     email: {
       type: String,
       required: [true, "Please provide an email"],
@@ -20,6 +12,19 @@ const userSchema = new mongoose.Schema(
       match: [
         /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
         "Please provide a valid email address",
+      ],
+    },
+    username: {
+      type: String,
+      unique: true,
+      sparse: true,
+      lowercase: true,
+      trim: true,
+      minlength: 3,
+      maxlength: 30,
+      match: [
+        /^[a-z0-9_][a-z0-9_.-]{2,29}$/,
+        "Username must be 3–30 characters and use letters, numbers, _, ., or -",
       ],
     },
     password: {
