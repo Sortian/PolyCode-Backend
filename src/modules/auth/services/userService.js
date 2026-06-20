@@ -51,9 +51,19 @@ async function ensureUsername(userDoc) {
 async function toPublicUser(userDoc) {
   const withUsername = await ensureUsername(userDoc);
   const serializedUser = withUsername.toJSON();
-  await syncPolycoderForEmailSafe(serializedUser);
-  await syncFollowersToMainDb(withUsername);
+  scheduleMainDbProfileSync(withUsername, serializedUser);
   return serializedUser;
+}
+
+function scheduleMainDbProfileSync(userDoc, serializedUser) {
+  setTimeout(() => {
+    Promise.all([
+      syncPolycoderForEmailSafe(serializedUser),
+      syncFollowersToMainDb(userDoc),
+    ]).catch((error) => {
+      console.warn("Main DB profile background sync failed:", error.message);
+    });
+  }, 0);
 }
 
 async function syncFollowersToMainDb(userDoc) {
@@ -311,7 +321,11 @@ async function setFollowRelationship(currentUserId, targetUsername, shouldFollow
     followerEmail: currentUser.email,
     follow: shouldFollow,
   });
-  await syncFollowersToMainDb(targetUser);
+  setTimeout(() => {
+    syncFollowersToMainDb(targetUser).catch((error) => {
+      console.warn("Main DB followers background sync failed:", error.message);
+    });
+  }, 0);
 
   return {
     isFollowing: shouldFollow,
