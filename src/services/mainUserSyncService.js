@@ -62,6 +62,16 @@ function normalizeEmail(email) {
   return String(email || "").trim().toLowerCase();
 }
 
+function normalizeEmailList(emails = []) {
+  return Array.from(
+    new Set(
+      emails
+        .map(normalizeEmail)
+        .filter(Boolean),
+    ),
+  );
+}
+
 async function getMainDatabase() {
   const mainDbName = getMainDatabaseName();
   const mainUri = getMainMongoUri();
@@ -147,13 +157,49 @@ async function updateMainFollowerEmail({ targetEmail, followerEmail, follow }) {
     { email: normalizedTargetEmail },
     follow
       ? {
-          $addToSet: { follower: normalizedFollowerEmail },
+          $addToSet: {
+            follower: normalizedFollowerEmail,
+            followers: normalizedFollowerEmail,
+          },
           $currentDate: { updatedAt: true },
         }
       : {
-          $pull: { follower: normalizedFollowerEmail },
+          $pull: {
+            follower: normalizedFollowerEmail,
+            followers: normalizedFollowerEmail,
+          },
           $currentDate: { updatedAt: true },
         },
+  );
+
+  return {
+    matchedCount: result.matchedCount,
+    modifiedCount: result.modifiedCount,
+  };
+}
+
+async function syncMainFollowersForEmail({ targetEmail, followerEmails }) {
+  const normalizedTargetEmail = normalizeEmail(targetEmail);
+  const normalizedFollowerEmails = normalizeEmailList(followerEmails);
+
+  if (!normalizedTargetEmail) {
+    return { skipped: true };
+  }
+
+  const mainDb = await getMainDatabase();
+  if (!mainDb) {
+    return { skipped: true, reason: "Main MongoDB is not connected" };
+  }
+
+  const result = await mainDb.collection("users").updateOne(
+    { email: normalizedTargetEmail },
+    {
+      $set: {
+        follower: normalizedFollowerEmails,
+        followers: normalizedFollowerEmails,
+      },
+      $currentDate: { updatedAt: true },
+    },
   );
 
   return {
@@ -194,9 +240,27 @@ function updateMainFollowerEmailSafe(payload) {
     });
 }
 
+function syncMainFollowersForEmailSafe(payload) {
+  return syncMainFollowersForEmail(payload)
+    .then((result) => {
+      if (result?.matchedCount === 0) {
+        console.warn(
+          `Main user followers sync skipped: no users document matched email ${normalizeEmail(payload?.targetEmail)}`,
+        );
+      }
+      return result;
+    })
+    .catch((error) => {
+      console.warn("Main user followers sync failed:", error.message);
+      return { skipped: true, error: error.message };
+    });
+}
+
 module.exports = {
   syncPolycoderForEmail,
   syncPolycoderForEmailSafe,
   updateMainFollowerEmail,
   updateMainFollowerEmailSafe,
+  syncMainFollowersForEmail,
+  syncMainFollowersForEmailSafe,
 };

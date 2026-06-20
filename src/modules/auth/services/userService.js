@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const {
   syncPolycoderForEmailSafe,
+  syncMainFollowersForEmailSafe,
   updateMainFollowerEmailSafe,
 } = require("../../../services/mainUserSyncService");
 
@@ -51,7 +52,28 @@ async function toPublicUser(userDoc) {
   const withUsername = await ensureUsername(userDoc);
   const serializedUser = withUsername.toJSON();
   await syncPolycoderForEmailSafe(serializedUser);
+  await syncFollowersToMainDb(withUsername);
   return serializedUser;
+}
+
+async function syncFollowersToMainDb(userDoc) {
+  const followerIds = (userDoc.followers || []).filter(Boolean);
+  if (!userDoc.email || followerIds.length === 0) {
+    await syncMainFollowersForEmailSafe({
+      targetEmail: userDoc.email,
+      followerEmails: [],
+    });
+    return;
+  }
+
+  const followerUsers = await User.find({ _id: { $in: followerIds } })
+    .select("email")
+    .lean();
+
+  await syncMainFollowersForEmailSafe({
+    targetEmail: userDoc.email,
+    followerEmails: followerUsers.map((follower) => follower.email),
+  });
 }
 
 /**
@@ -289,6 +311,7 @@ async function setFollowRelationship(currentUserId, targetUsername, shouldFollow
     followerEmail: currentUser.email,
     follow: shouldFollow,
   });
+  await syncFollowersToMainDb(targetUser);
 
   return {
     isFollowing: shouldFollow,
