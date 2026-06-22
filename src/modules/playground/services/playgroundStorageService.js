@@ -325,7 +325,7 @@ async function listRuns(userId, { language, fileId, limit = 10 }) {
 
   const rows = await PlaygroundRun.find(query)
     .sort({ createdAt: -1 })
-    .limit(Math.min(Number(limit) || 10, 30))
+    .limit(Math.min(Number(limit) || 10, 50))
     .lean();
 
   return rows.map((row) => ({
@@ -339,6 +339,24 @@ async function listRuns(userId, { language, fileId, limit = 10 }) {
     durationMs: row.durationMs,
     createdAt: row.createdAt,
   }));
+}
+
+async function removeRun(userId, runId) {
+  const result = await PlaygroundRun.deleteOne({ _id: runId, userId });
+  if (result.deletedCount === 0) {
+    const error = new Error("Run not found.");
+    error.statusCode = 404;
+    throw error;
+  }
+  return { success: true };
+}
+
+async function clearRuns(userId, { language, fileId } = {}) {
+  const query = { userId };
+  if (language) query.language = language;
+  if (fileId) query.fileId = fileId;
+  const result = await PlaygroundRun.deleteMany(query);
+  return { success: true, deleted: result.deletedCount };
 }
 
 /** Push a full local workspace to the cloud (first login / migration). */
@@ -404,6 +422,8 @@ module.exports = {
   removeFile,
   saveRun,
   listRuns,
+  removeRun,
+  clearRuns,
   defaultMainFileName,
   defaultStarterContent,
 };

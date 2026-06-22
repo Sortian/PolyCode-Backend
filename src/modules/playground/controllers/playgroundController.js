@@ -181,6 +181,28 @@ async function listRunsHandler(req, res) {
   }
 }
 
+async function deleteRunHandler(req, res) {
+  try {
+    const runId = String(req.params.runId || "").trim();
+    const result = await playgroundStorage.removeRun(req.userId, runId);
+    return res.json(result);
+  } catch (error) {
+    return handleError(res, error);
+  }
+}
+
+async function clearRunsHandler(req, res) {
+  try {
+    const result = await playgroundStorage.clearRuns(req.userId, {
+      language: req.query.language,
+      fileId: req.query.fileId,
+    });
+    return res.json(result);
+  } catch (error) {
+    return handleError(res, error);
+  }
+}
+
 module.exports = {
   executeCodeHandler,
   listFilesHandler,
@@ -192,4 +214,6 @@ module.exports = {
   deleteFileHandler,
   saveRunHandler,
   listRunsHandler,
+  deleteRunHandler,
+  clearRunsHandler,
 };

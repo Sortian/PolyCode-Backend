@@ -12,6 +12,8 @@ const {
   deleteFileHandler,
   saveRunHandler,
   listRunsHandler,
+  deleteRunHandler,
+  clearRunsHandler,
 } = require("./controllers/playgroundController");
 
 const router = express.Router();
@@ -31,5 +33,7 @@ router.post("/workspace/import", requireAuth, importWorkspaceHandler);
 
 router.post("/runs", requireAuth, saveRunHandler);
 router.get("/runs", requireAuth, listRunsHandler);
+router.delete("/runs/:runId", requireAuth, deleteRunHandler);
+router.delete("/runs", requireAuth, clearRunsHandler);
 
 module.exports = router;
