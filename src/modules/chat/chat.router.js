@@ -40,7 +40,6 @@ router.delete(
 
 router.post(
   "/assistant/feedback",
-  assistantRateLimit,
   optionalAuth,
   chatController.submitAssistantFeedback,
 );

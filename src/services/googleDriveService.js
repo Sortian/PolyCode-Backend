@@ -245,10 +245,103 @@ async function streamDriveFile(fileId) {
   };
 }
 
+async function readDriveFileAsString(fileId) {
+  const { stream } = await streamDriveFile(fileId);
+  const chunks = [];
+  for await (const chunk of stream) {
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks).toString("utf8");
+}
+
+async function findDriveFolder({ name, parentId }) {
+  const { drive, mode } = getDriveClient();
+  const safeName = String(name).replace(/'/g, "\\'");
+  const listParams = {
+    q: `name='${safeName}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+    fields: "files(id, name)",
+    pageSize: 1,
+  };
+  if (mode === "service_account") {
+    listParams.supportsAllDrives = true;
+  }
+  const list = await drive.files.list(listParams);
+  return list.data.files?.[0]?.id || null;
+}
+
+async function ensureDriveFolder({ name, parentId }) {
+  const existing = await findDriveFolder({ name, parentId });
+  if (existing) return existing;
+
+  const { drive, mode } = getDriveClient();
+  const createParams = {
+    requestBody: {
+      name: String(name).slice(0, 120),
+      mimeType: "application/vnd.google-apps.folder",
+      parents: [parentId],
+    },
+    fields: "id",
+  };
+  if (mode === "service_account") {
+    createParams.supportsAllDrives = true;
+  }
+
+  try {
+    const folder = await drive.files.create(createParams);
+    return folder.data.id;
+  } catch (error) {
+    throw new Error(formatDriveError(error));
+  }
+}
+
+async function updateDriveFileContent({
+  fileId,
+  buffer,
+  mimeType = "text/plain",
+}) {
+  const { drive, mode } = getDriveClient();
+  const params = {
+    fileId,
+    media: {
+      mimeType,
+      body: Readable.from(buffer),
+    },
+    fields: "id, modifiedTime",
+  };
+  if (mode === "service_account") {
+    params.supportsAllDrives = true;
+  }
+
+  try {
+    const result = await drive.files.update(params);
+    return result.data;
+  } catch (error) {
+    throw new Error(formatDriveError(error));
+  }
+}
+
+async function deleteDriveFile(fileId) {
+  const { drive, mode } = getDriveClient();
+  const params = { fileId };
+  if (mode === "service_account") {
+    params.supportsAllDrives = true;
+  }
+
+  try {
+    await drive.files.delete(params);
+  } catch (error) {
+    throw new Error(formatDriveError(error));
+  }
+}
+
 module.exports = {
   uploadProfileImage,
   uploadDriveFile,
   streamDriveFile,
+  readDriveFileAsString,
+  ensureDriveFolder,
+  updateDriveFileContent,
+  deleteDriveFile,
   buildDriveThumbnailUrl,
   isDriveConfigured,
   useOAuthMode,
