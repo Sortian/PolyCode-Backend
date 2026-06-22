@@ -98,19 +98,42 @@ function promptsToMessages(prompts) {
 }
 
 async function assertSessionAccess(sessionId, userId) {
-  const owner = await Prompt.findOne({ sessionId, userId: { $ne: null } })
-    .select("userId")
-    .lean();
+  const trimmedSessionId = String(sessionId || "").trim();
+  if (!trimmedSessionId) return;
 
-  if (
-    owner?.userId &&
-    userId &&
-    String(owner.userId) !== String(userId)
-  ) {
-    const err = new Error("Forbidden");
+  const ownerIds = await Prompt.distinct("userId", {
+    sessionId: trimmedSessionId,
+    userId: { $ne: null },
+  });
+
+  const normalizedOwners = ownerIds.map((id) => String(id));
+
+  if (normalizedOwners.length === 0) {
+    return;
+  }
+
+  if (!userId) {
+    const err = new Error("Sign in to rate or continue this saved conversation.");
     err.statusCode = 403;
     throw err;
   }
+
+  const currentUserId = String(userId);
+  if (normalizedOwners.length === 1 && normalizedOwners[0] === currentUserId) {
+    return;
+  }
+
+  const err = new Error("Forbidden");
+  err.statusCode = 403;
+  throw err;
+}
+
+async function claimAnonymousSession(sessionId, userId) {
+  if (!userId || !sessionId) return;
+  await Prompt.updateMany(
+    { sessionId: String(sessionId).trim(), userId: null },
+    { $set: { userId } },
+  );
 }
 
 async function sendAssistantMessage({
@@ -155,9 +178,13 @@ async function sendAssistantMessage({
     String(assistantMessageId || "").trim() ||
     `assistant-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
+  const trimmedSessionId = String(sessionId).trim();
+  await assertSessionAccess(trimmedSessionId, userId);
+  await claimAnonymousSession(trimmedSessionId, userId);
+
   const prompt = await Prompt.create({
     userId: userId || null,
-    sessionId: String(sessionId).trim(),
+    sessionId: trimmedSessionId,
     messageId: messageId.slice(0, 64),
     userMessage: trimmedMessage,
     assistantMessage: reply,
@@ -211,6 +238,7 @@ async function submitAssistantFeedback({
   }
 
   await assertSessionAccess(trimmedSessionId, userId);
+  await claimAnonymousSession(trimmedSessionId, userId);
 
   const prompt = await Prompt.findOneAndUpdate(
     { sessionId: trimmedSessionId, messageId: trimmedMessageId },
