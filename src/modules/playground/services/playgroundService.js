@@ -1,8 +1,13 @@
-const { executePythonCode, executeJavaScriptCode } = require("../../../services/executionService");
+const {
+  executePythonCode,
+  executeJavaScriptCode,
+  executeCppCode,
+  executeJavaCode,
+} = require("../../../services/executionService");
 
 /**
  * Execute code in playground
- * @param {string} language - Programming language (javascript, python, js, py)
+ * @param {string} language - Programming language
  * @param {string} code - Code to execute
  * @param {string} stdin - Standard input (optional)
  * @returns {Promise<Object>} Execution result
@@ -12,13 +17,20 @@ async function executeCode(language, code, stdin = "") {
 
   if (["javascript", "js"].includes(normalizedLanguage)) {
     return await executeJavaScriptCode(code);
-  } else if (["python", "py"].includes(normalizedLanguage)) {
-    return await executePythonCode(code, stdin);
-  } else {
-    throw new Error(
-      `Unsupported language: ${language}. Supported: javascript, python`,
-    );
   }
+  if (["python", "py"].includes(normalizedLanguage)) {
+    return await executePythonCode(code, stdin);
+  }
+  if (["cpp", "c++", "c"].includes(normalizedLanguage)) {
+    return await executeCppCode(code, stdin);
+  }
+  if (normalizedLanguage === "java") {
+    return await executeJavaCode(code);
+  }
+
+  throw new Error(
+    `Unsupported language: ${language}. Supported on server: javascript, python, c++, java`,
+  );
 }
 
 /**
@@ -49,7 +61,16 @@ function validateExecutionRequest(language, code) {
     };
   }
 
-  const supportedLanguages = ["javascript", "python", "js", "py"];
+  const supportedLanguages = [
+    "javascript",
+    "python",
+    "js",
+    "py",
+    "cpp",
+    "c++",
+    "c",
+    "java",
+  ];
   if (!supportedLanguages.includes(language.toLowerCase())) {
     return {
       valid: false,

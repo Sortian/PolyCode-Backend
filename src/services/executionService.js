@@ -184,7 +184,8 @@ def __polycode_auto_input(prompt=''):
 builtins.input = __polycode_auto_input
 `;
 
-  const args = [...baseArgs, "-c", `${autoInputPrelude}\n${wrapPythonForExecution(code)}`];
+  const prelude = stdin.trim() ? "" : autoInputPrelude;
+  const args = [...baseArgs, "-c", `${prelude}\n${wrapPythonForExecution(code)}`];
 
   return new Promise(async (resolve, reject) => {
     let child;
@@ -354,7 +355,7 @@ async function executeJavaCode(code) {
  * @param {string} code - C++ code to execute
  * @returns {Promise<Object>} Execution result
  */
-async function executeCppCode(code) {
+async function executeCppCode(code, stdin = "") {
   await fs.mkdir(RUNTIME_TMP_PATH, { recursive: true });
   const id = crypto.randomBytes(8).toString("hex");
   const sourceFile = path.join(RUNTIME_TMP_PATH, `run_${id}.cpp`);
@@ -488,6 +489,11 @@ async function executeCppCode(code) {
           exitCode,
         });
       });
+
+      if (stdin) {
+        child.stdin.write(stdin.endsWith("\n") ? stdin : `${stdin}\n`);
+      }
+      child.stdin.end();
     });
   });
 }
