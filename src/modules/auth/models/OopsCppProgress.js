@@ -75,6 +75,16 @@ const oopsCppProgressSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    dailyReadMarks: {
+      type: [
+        {
+          date: { type: String, required: true },
+          markedAt: { type: Date, default: Date.now },
+          bonusXp: { type: Number, default: 3 },
+        },
+      ],
+      default: [],
+    },
   },
   { timestamps: true },
 );

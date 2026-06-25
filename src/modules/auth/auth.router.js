@@ -3,6 +3,7 @@ const router = express.Router();
 const userController = require("./controllers/userController");
 const progressController = require("./controllers/progressController");
 const oopsCppProgressController = require("./controllers/oopsCppProgressController");
+const dailyXpProgressController = require("./controllers/dailyXpProgressController");
 const requireAuth = require("../../middleware/requireAuth");
 
 // ── User Auth Routes ─────────────────────────────────────────────────────────
@@ -70,6 +71,22 @@ router.post("/change-password", userController.changePasswordHandler);
 router.delete("/user/:id", userController.deleteAccount);
 
 // ── Progress Routes ───────────────────────────────────────────────────────────
+
+router.get(
+  "/progress/daily-xp",
+  requireAuth,
+  dailyXpProgressController.getDailyXp,
+);
+router.post(
+  "/progress/daily-xp/record",
+  requireAuth,
+  dailyXpProgressController.recordDailyXp,
+);
+router.post(
+  "/progress/daily-xp/mark-read",
+  requireAuth,
+  dailyXpProgressController.markDailyXpRead,
+);
 
 router.get(
   "/progress/:userId/:language",

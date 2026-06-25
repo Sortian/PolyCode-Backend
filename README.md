@@ -51,6 +51,33 @@ npm start
 
 - `GET /api/health` - Server health check
 
+### Daily XP progress (auth required)
+
+- `GET /api/auth/progress/daily-xp` — JSON daily XP breakdown per user (all courses)
+- `POST /api/auth/progress/daily-xp/record` — body `{ "course", "lessonId", "title", "xp" }` records lesson XP
+- `POST /api/auth/progress/daily-xp/mark-read` — body `{ "date": "YYYY-MM-DD" }`, marks day read and awards **+3 XP** once
+
+Example `GET /api/auth/progress/daily-xp` response:
+
+```json
+{
+  "days": [
+    {
+      "date": "2026-06-23",
+      "lessonXp": 25,
+      "lessonsCompleted": 2,
+      "read": false,
+      "readBonusXp": 0,
+      "xpEarned": 25
+    }
+  ],
+  "totalXp": 128,
+  "unreadDays": 1,
+  "currentStreak": 3,
+  "readBonusXp": 3
+}
+```
+
 ### File Operations
 
 - **Auto-discovery** - Scans data folder for documentation
