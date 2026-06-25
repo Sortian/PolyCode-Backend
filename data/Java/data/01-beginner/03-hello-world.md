@@ -2,190 +2,130 @@
 
 **Module 01 · Beginner · Lesson 03 of 10**
 
-# Java I/O Statements
 
-## What is I/O?
-**Input/Output (I/O)** refers to how a Java program communicates with the outside world — reading data from users or files, and displaying results.
+## Learning objectives
+
+- Understand **hello world** in Java
+- Read and write small examples you can run locally
+- Connect this topic to the next lesson in the course
+
+## Overview
+
+Hello World is a core topic on the PolyCode **Java Certificate Course** path. Work through the examples, then try the exercise before moving on.
+
+## Key concepts
+
+1. **Syntax and structure** — how Java expresses this idea clearly
+2. **Common patterns** — what you will see in real projects
+3. **Mistakes to avoid** — typical beginner errors and fixes
+
+## Example
+
+```java
+// Hello World — practice sketch
+// add your code here
+```
+
+## Exercise
+
+1. Write a short program that uses today's topic.
+2. Change one value and predict the output before running.
+3. Explain the result in your own words (2–3 sentences).
+
+## Checkpoint
+
+You are ready for the next lesson when you can solve the exercise without copying the example.
 
 ---
 
-## 1. Output — `print()`
-
-The `print()` function displays information to the screen.
-
-### Basic Syntax
-```java
-print(value1, value2, ..., sep=' ', end='\n')
-```
-
-### Types of Output
-
-#### Simple Print
-```java
-print("Hello, World!")
-print(42)
-print(3.14)
-print(True)
-```
-
-#### Print with Variables
-```java
-name = "Alice"
-age = 25
-print(name)
-print(age)
-```
-
-#### Print Multiple Values
-```java
-print("Name:", name, "Age:", age)
-```
-
-#### Print with `sep` (custom separator)
-```java
-print("Java", "is", "awesome", sep="-")
-# Output: Java-is-awesome
-```
-
-#### Print with `end` (custom ending)
-```java
-print("Hello", end=" ")
-print("World")
-# Output: Hello World  (on same line)
-```
-
-#### Formatted Output — f-strings (Recommended)
-```java
-name = "Alice"
-age = 25
-print(f"Name: {name}, Age: {age}")
-```
-
-#### Formatted Output — `.format()` method
-```java
-print("Name: {}, Age: {}".format(name, age))
-print("Name: {0}, Age: {1}".format(name, age))
-```
-
-#### Formatted Output — `%` operator (old style)
-```java
-print("Name: %s, Age: %d" % (name, age))
-```
-
-#### Printing Special Characters
-```java
-print("Line1\nLine2")      # newline
-print("Col1\tCol2")        # tab
-print("He said \"Hello\"") # quotes
-print("Path: C:\\Users")   # backslash
-```
+**Next:** Continue to lesson 04 in this module.
 
 ---
 
-## 2. Input — `input()`
+## Additional reference
 
-The `input()` function reads a line of text entered by the user.
+# Output and Input Basics
 
-### Basic Syntax
-```java
-variable = input(prompt)
-```
+## Printing output
 
-> ⚠️ `input()` **always returns a string**. You must convert it for numbers.
-
-### Types of Input
-
-#### Simple String Input
-```java
-name = input("Enter your name: ")
-print(f"Hello, {name}!")
-```
-
-#### Integer Input
-```java
-age = int(input("Enter your age: "))
-print(f"You are {age} years old.")
-```
-
-#### Float Input
-```java
-height = float(input("Enter your height in meters: "))
-print(f"Your height is {height}m")
-```
-
-#### Multiple Inputs on One Line (split)
-```java
-x, y = input("Enter two numbers separated by space: ").split()
-x, y = int(x), int(y)
-print(f"Sum = {x + y}")
-```
-
-#### Multiple Inputs with map()
-```java
-a, b, c = map(int, input("Enter three numbers: ").split())
-print(a, b, c)
-```
-
----
-
-## 3. Type Conversion for Input
-
-| Function | Converts To |
-|----------|------------|
-| `int()`  | Integer    |
-| `float()`| Float      |
-| `str()`  | String     |
-| `bool()` | Boolean    |
+Java gives you three closely related ways to print text:
 
 ```java
-num_str = input("Enter a number: ")   # "42" (string)
-num_int = int(num_str)                 # 42   (integer)
-num_float = float(num_str)             # 42.0 (float)
+System.out.println("Hello, World!");   // prints, then moves to a new line
+System.out.print("Hello, ");            // prints, stays on the same line
+System.out.print("World!");
 ```
 
----
+**Output:**
+```
+Hello, World!
+Hello, World!
+```
 
-## 4. File I/O
+### Concatenating values with `+`
 
-### Writing to a File
 ```java
-with open("output.txt", "w") as file:
-    file.write("Hello, File!\n")
-    file.write("Second line\n")
+String name = "Maryam";
+int age = 21;
+System.out.println("Name: " + name + ", Age: " + age);
 ```
 
-### Reading from a File
+**Output:**
+```
+Name: Maryam, Age: 21
+```
+
+When you use `+` with a `String` on either side, Java converts the other value to text automatically — this is called **string concatenation**, not addition.
+
+### Formatted output with `printf`
+
+For more control over how numbers and text line up, use `System.out.printf`, which works like a template with placeholders:
+
 ```java
-with open("output.txt", "r") as file:
-    content = file.read()
-    print(content)
+double price = 19.5;
+System.out.printf("Price: $%.2f%n", price);
 ```
 
-### Reading Line by Line
+**Output:**
+```
+Price: $19.50
+```
+
+| Placeholder | Meaning |
+|---|---|
+| `%s` | String |
+| `%d` | Integer |
+| `%.2f` | Floating-point number, 2 decimal places |
+| `%n` | New line (preferred over `\n` — works correctly on every OS) |
+
+## Reading input from the keyboard
+
+To read what a user types, use the `Scanner` class from `java.util`:
+
 ```java
-with open("output.txt", "r") as file:
-    for line in file:
-        print(line.strip())
+import java.util.Scanner;
+
+public class Greeter {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.print("What's your name? ");
+        String name = scanner.nextLine();
+
+        System.out.println("Hello, " + name + "!");
+        scanner.close();
+    }
+}
 ```
 
-### File Modes
+If the user types `Maryam` and presses Enter:
 
-| Mode | Description        |
-|------|--------------------|
-| `r`  | Read (default)     |
-| `w`  | Write (overwrite)  |
-| `a`  | Append             |
-| `r+` | Read and Write     |
+**Output:**
+```
+What's your name? Maryam
+Hello, Maryam!
+```
 
----
+`Scanner` is covered in full depth in Lesson 10 — this is just enough to read and print a value end-to-end.
 
-## Summary
-
-| Feature | Function | Returns |
-|---------|----------|---------|
-| Display output | `print()` | Nothing |
-| Read user input | `input()` | String  |
-| Read file | `open()` + `.read()` | String |
-| Write file | `open()` + `.write()` | Nothing |
-
-> 💡 **Key Tip**: Always convert `input()` to the required type (`int`, `float`) before doing arithmetic.
+> 💡 **Key tip:** `println` adds a newline automatically; `print` does not. Mixing them up is the most common reason beginners get output glued onto one line by accident.
