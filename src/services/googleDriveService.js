@@ -2,15 +2,21 @@ const fs = require("fs");
 const path = require("path");
 const { Readable } = require("stream");
 const { google } = require("googleapis");
+const {
+  resolveRefreshToken,
+  writeTokenFile,
+  warnIfTokenMalformed,
+  hasOAuthClientConfig,
+  isOAuthConfigured,
+  formatInvalidGrantHelp,
+} = require("./googleOAuthStore");
 
 const DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file";
 
+let cachedOAuthClient = null;
+
 function useOAuthMode() {
-  return Boolean(
-    process.env.GOOGLE_DRIVE_OAUTH_CLIENT_ID?.trim() &&
-      process.env.GOOGLE_DRIVE_OAUTH_CLIENT_SECRET?.trim() &&
-      process.env.GOOGLE_DRIVE_OAUTH_REFRESH_TOKEN?.trim(),
-  );
+  return isOAuthConfigured();
 }
 
 function loadServiceAccountCredentials() {
@@ -49,6 +55,17 @@ function hasServiceAccountCreds() {
 }
 
 function getOAuthDriveClient() {
+  if (cachedOAuthClient) return cachedOAuthClient;
+
+  const tokenBundle = resolveRefreshToken();
+  if (!tokenBundle?.refresh_token) {
+    throw new Error(
+      "Google Drive OAuth refresh token missing. Run: node scripts/google-drive-oauth-setup.js",
+    );
+  }
+
+  warnIfTokenMalformed(tokenBundle.refresh_token);
+
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_DRIVE_OAUTH_CLIENT_ID.trim(),
     process.env.GOOGLE_DRIVE_OAUTH_CLIENT_SECRET.trim(),
@@ -57,10 +74,25 @@ function getOAuthDriveClient() {
   );
 
   oauth2Client.setCredentials({
-    refresh_token: process.env.GOOGLE_DRIVE_OAUTH_REFRESH_TOKEN.trim(),
+    refresh_token: tokenBundle.refresh_token,
+    access_token: tokenBundle.access_token,
+    expiry_date: tokenBundle.expiry_date,
   });
 
-  return google.drive({ version: "v3", auth: oauth2Client });
+  oauth2Client.on("tokens", (tokens) => {
+    try {
+      writeTokenFile(tokens);
+    } catch (error) {
+      console.warn("Drive OAuth: could not persist refreshed tokens:", error.message);
+    }
+  });
+
+  cachedOAuthClient = oauth2Client;
+  return oauth2Client;
+}
+
+function getOAuthDrive() {
+  return google.drive({ version: "v3", auth: getOAuthDriveClient() });
 }
 
 function getServiceAccountDriveClient() {
@@ -82,7 +114,7 @@ function getServiceAccountDriveClient() {
 
 function getDriveClient() {
   if (useOAuthMode()) {
-    return { drive: getOAuthDriveClient(), mode: "oauth" };
+    return { drive: getOAuthDrive(), mode: "oauth" };
   }
   return { drive: getServiceAccountDriveClient(), mode: "service_account" };
 }
@@ -101,12 +133,7 @@ function formatDriveError(error) {
     message.includes("invalid_grant") ||
     responseError === "invalid_grant"
   ) {
-    return (
-      "Google Drive OAuth refresh token is invalid or expired. " +
-      "Re-run: node scripts/google-drive-oauth-setup.js — sign in, copy the new " +
-      "GOOGLE_DRIVE_OAUTH_REFRESH_TOKEN into .env, restart the backend, then export again. " +
-      "Ensure CLIENT_ID, CLIENT_SECRET, and REFRESH_TOKEN are from the same OAuth setup."
-    );
+    return formatInvalidGrantHelp();
   }
   if (
     message.includes("storage quota") ||
@@ -334,6 +361,24 @@ async function deleteDriveFile(fileId) {
   }
 }
 
+async function verifyOAuthConnection() {
+  if (!useOAuthMode()) return { ok: false, skipped: true };
+
+  try {
+    const client = getOAuthDriveClient();
+    await client.getAccessToken();
+    return { ok: true };
+  } catch (error) {
+    const message = error?.message || String(error);
+    return {
+      ok: false,
+      error: message.includes("invalid_grant")
+        ? formatInvalidGrantHelp()
+        : message,
+    };
+  }
+}
+
 module.exports = {
   uploadProfileImage,
   uploadDriveFile,
@@ -345,4 +390,5 @@ module.exports = {
   buildDriveThumbnailUrl,
   isDriveConfigured,
   useOAuthMode,
+  verifyOAuthConnection,
 };

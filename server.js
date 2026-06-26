@@ -349,8 +349,32 @@ module.exports = app;
 
 // Only bind a port when executed directly (`node server.js`), not on Vercel serverless.
 if (require.main === module) {
-  app.listen(PORT, () => {
+  app.listen(PORT, async () => {
     console.log(`🚀  Server:    http://localhost:${PORT}`);
     console.log(`📖  API Docs:  http://localhost:${PORT}/api-docs`);
+
+    try {
+      const { isDriveConfigured, verifyOAuthConnection, useOAuthMode } =
+        require("./src/services/googleDriveService");
+      const { warnIfTokenMalformed, resolveRefreshToken } =
+        require("./src/services/googleOAuthStore");
+
+      if (isDriveConfigured() && useOAuthMode()) {
+        warnIfTokenMalformed(resolveRefreshToken()?.refresh_token || "");
+        const check = await verifyOAuthConnection();
+        if (check.ok) {
+          console.log("✅  Google Drive OAuth: refresh token OK");
+        } else if (!check.skipped) {
+          console.warn("⚠️  Google Drive OAuth failed on startup.");
+          console.warn(check.error?.split("\n")[0] || check.error);
+          console.warn("   Run: node scripts/google-drive-oauth-setup.js");
+        }
+      }
+    } catch (driveCheckError) {
+      console.warn(
+        "⚠️  Google Drive startup check skipped:",
+        driveCheckError.message,
+      );
+    }
   });
 }
