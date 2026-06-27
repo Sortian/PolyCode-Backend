@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const userController = require("./controllers/userController");
 const progressController = require("./controllers/progressController");
+const dailyXpController = require("./controllers/dailyXpController");
 const oopsCppProgressController = require("./controllers/oopsCppProgressController");
 const requireAuth = require("../../middleware/requireAuth");
 
@@ -70,6 +71,22 @@ router.post("/change-password", userController.changePasswordHandler);
 router.delete("/user/:id", userController.deleteAccount);
 
 // ── Progress Routes ───────────────────────────────────────────────────────────
+
+router.get(
+  "/progress/daily-xp",
+  requireAuth,
+  dailyXpController.getDailyXp,
+);
+router.post(
+  "/progress/daily-xp/record",
+  requireAuth,
+  dailyXpController.recordDailyXp,
+);
+router.post(
+  "/progress/daily-xp/mark-read",
+  requireAuth,
+  dailyXpController.markDailyXpRead,
+);
 
 router.get(
   "/progress/:userId/:language",

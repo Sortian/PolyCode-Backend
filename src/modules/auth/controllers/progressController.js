@@ -1,4 +1,13 @@
+const mongoose = require("mongoose");
 const progressService = require("../services/progressService");
+
+function assertValidUserId(userId) {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    const error = new Error("Invalid user id");
+    error.statusCode = 400;
+    throw error;
+  }
+}
 
 /**
  * GET /api/progress/:userId/:language - Get progress for user language
@@ -6,6 +15,7 @@ const progressService = require("../services/progressService");
 async function getLanguageProgress(req, res) {
   try {
     const { userId, language } = req.params;
+    assertValidUserId(userId);
 
     const progress = await progressService.getUserLanguageProgress(
       userId,
@@ -25,6 +35,7 @@ async function getLanguageProgress(req, res) {
 async function getAllProgress(req, res) {
   try {
     const { userId } = req.params;
+    assertValidUserId(userId);
 
     const progressList = await progressService.getUserAllProgress(userId);
 
