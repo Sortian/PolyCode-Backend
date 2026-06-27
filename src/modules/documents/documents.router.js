@@ -7,6 +7,7 @@ const {
   getTreeHandler,
   getCategoriesHandler,
   executePython,
+  executeRuby,
   getDocument,
 } = require("./controllers/documentController");
 
@@ -39,6 +40,11 @@ router.get("/categories", getCategoriesHandler);
  * POST /api/documents/run-python - Execute Python code
  */
 router.post("/run-python", executePython);
+
+/**
+ * POST /api/documents/run-ruby - Execute Ruby code
+ */
+router.post("/run-ruby", executeRuby);
 
 /**
  * GET /api/documents/* - Get single document

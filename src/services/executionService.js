@@ -1,4 +1,5 @@
 const fs = require("fs").promises;
+const os = require("os");
 const path = require("path");
 const crypto = require("crypto");
 const { spawn } = require("child_process");
@@ -500,8 +501,30 @@ async function executeCppCode(code, stdin = "") {
 
 let resolvedRubyCommand = null;
 let rubyCommandProbeDone = false;
-const PISTON_API_URL = "https://emkc.org/api/v2/piston/execute";
+const PISTON_API_URL =
+  process.env.PISTON_API_URL || "https://emkc.org/api/v2/piston/execute";
 const PROBE_TIMEOUT_MS = 4000;
+
+function isServerlessRuntime() {
+  return Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+}
+
+async function ensureRuntimeDir(dir) {
+  await fs.mkdir(dir, { recursive: true });
+  return dir;
+}
+
+async function getWritableRuntimeDir() {
+  if (isServerlessRuntime()) {
+    return ensureRuntimeDir(path.join(os.tmpdir(), "polycode-runtime"));
+  }
+
+  try {
+    return await ensureRuntimeDir(RUNTIME_TMP_PATH);
+  } catch (_) {
+    return ensureRuntimeDir(path.join(os.tmpdir(), "polycode-runtime"));
+  }
+}
 
 async function waitForChildExit(child, timeoutMs) {
   return new Promise((resolve, reject) => {
@@ -634,9 +657,19 @@ async function resolveRubyCommand() {
  * @returns {Promise<Object>} Execution result
  */
 async function executeRubyCode(code, stdin = "") {
-  await fs.mkdir(RUNTIME_TMP_PATH, { recursive: true });
+  if (isServerlessRuntime()) {
+    return executeRubyViaPiston(code);
+  }
+
+  let runtimeDir;
+  try {
+    runtimeDir = await getWritableRuntimeDir();
+  } catch (_) {
+    return executeRubyViaPiston(code);
+  }
+
   const filename = `run_${crypto.randomBytes(8).toString("hex")}.rb`;
-  const filepath = path.join(RUNTIME_TMP_PATH, filename);
+  const filepath = path.join(runtimeDir, filename);
 
   await fs.writeFile(filepath, code, "utf8");
 
@@ -654,7 +687,7 @@ async function executeRubyCode(code, stdin = "") {
     let child;
     try {
       child = await runSpawn(cmd, [...baseArgs, filepath], {
-        cwd: RUNTIME_TMP_PATH,
+        cwd: runtimeDir,
         env: { ...process.env, RUBYOPT: "-EUTF-8" },
         stdio: ["pipe", "pipe", "pipe"],
       });
