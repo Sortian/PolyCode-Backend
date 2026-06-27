@@ -1,8 +1,17 @@
+const mongoose = require("mongoose");
 const progressService = require("../services/progressService");
 const mongoose = require("mongoose");
 
 function isValidUserId(userId) {
   return mongoose.Types.ObjectId.isValid(userId);
+}
+
+function assertValidUserId(userId) {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    const error = new Error("Invalid user id");
+    error.statusCode = 400;
+    throw error;
+  }
 }
 
 /**
@@ -11,6 +20,7 @@ function isValidUserId(userId) {
 async function getLanguageProgress(req, res) {
   try {
     const { userId, language } = req.params;
+    assertValidUserId(userId);
 
     if (!isValidUserId(userId)) {
       return res.status(400).json({ error: "Invalid user id" });
@@ -34,6 +44,7 @@ async function getLanguageProgress(req, res) {
 async function getAllProgress(req, res) {
   try {
     const { userId } = req.params;
+    assertValidUserId(userId);
 
     if (!isValidUserId(userId)) {
       return res.status(400).json({ error: "Invalid user id" });

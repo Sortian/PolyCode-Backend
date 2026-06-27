@@ -10,7 +10,10 @@ const {
   getDocumentTree,
   getDocumentCategories,
 } = require("../services/documentService");
-const { executePythonCode } = require("../../../services/executionService");
+const {
+  executePythonCode,
+  executeRubyCode,
+} = require("../../../services/executionService");
 
 /**
  * GET /api/documents - List all documents with filters
@@ -121,6 +124,33 @@ async function executePython(req, res) {
 }
 
 /**
+ * POST /api/documents/run-ruby - Execute Ruby code from lesson examples
+ */
+async function executeRuby(req, res) {
+  try {
+    const { code, stdin = "" } = req.body || {};
+    if (!code || typeof code !== "string") {
+      return res.status(400).json({
+        error: "Request body must include a Ruby code string.",
+      });
+    }
+
+    const result = await executeRubyCode(
+      code,
+      typeof stdin === "string" ? stdin : "",
+    );
+    return res.json(result);
+  } catch (err) {
+    return res.status(500).json({
+      stdout: "",
+      stderr: err.message,
+      error: err.message,
+      exitCode: 1,
+    });
+  }
+}
+
+/**
  * Reconstruct the file path from Express params.
  *
  * ROOT CAUSE of the comma bug:
@@ -218,5 +248,6 @@ module.exports = {
   getTreeHandler,
   getCategoriesHandler,
   executePython,
+  executeRuby,
   getDocument,
 };

@@ -2,8 +2,8 @@ const express = require("express");
 const router = express.Router();
 const userController = require("./controllers/userController");
 const progressController = require("./controllers/progressController");
+const dailyXpController = require("./controllers/dailyXpController");
 const oopsCppProgressController = require("./controllers/oopsCppProgressController");
-const dailyXpProgressController = require("./controllers/dailyXpProgressController");
 const requireAuth = require("../../middleware/requireAuth");
 
 // ── User Auth Routes ─────────────────────────────────────────────────────────
@@ -75,17 +75,17 @@ router.delete("/user/:id", userController.deleteAccount);
 router.get(
   "/progress/daily-xp",
   requireAuth,
-  dailyXpProgressController.getDailyXp,
+  dailyXpController.getDailyXp,
 );
 router.post(
   "/progress/daily-xp/record",
   requireAuth,
-  dailyXpProgressController.recordDailyXp,
+  dailyXpController.recordDailyXp,
 );
 router.post(
   "/progress/daily-xp/mark-read",
   requireAuth,
-  dailyXpProgressController.markDailyXpRead,
+  dailyXpController.markDailyXpRead,
 );
 
 router.get(
