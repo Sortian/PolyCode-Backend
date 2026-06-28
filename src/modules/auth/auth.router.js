@@ -88,6 +88,16 @@ router.post(
   dailyXpController.markDailyXpRead,
 );
 
+/** GET /api/auth/polycoder/me/progress — progress for logged-in user */
+router.get(
+  "/polycoder/me/progress",
+  requireAuth,
+  progressController.getMyPolycoderProgress,
+);
+
+/** GET /api/auth/polycoder/:username/progress — full progress JSON (Postman-friendly) */
+router.get("/polycoder/:username/progress", progressController.getPolycoderProgress);
+
 router.get(
   "/progress/:userId/:language",
   progressController.getLanguageProgress,

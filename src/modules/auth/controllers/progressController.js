@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const progressService = require("../services/progressService");
-const mongoose = require("mongoose");
+const polycoderProgressService = require("../services/polycoderProgressService");
 
 function isValidUserId(userId) {
   return mongoose.Types.ObjectId.isValid(userId);
@@ -205,6 +205,42 @@ async function markLanguageComplete(req, res) {
 }
 
 /**
+ * GET /api/auth/polycoder/:username/progress - Full progress JSON for a polycoder
+ */
+async function getPolycoderProgress(req, res) {
+  try {
+    const { username } = req.params;
+    const progress = await polycoderProgressService.getProgressByUsername(username);
+    res.json(progress);
+  } catch (error) {
+    console.error("Get polycoder progress error:", error.message);
+    res.status(error.statusCode || 400).json({ error: error.message });
+  }
+}
+
+/**
+ * GET /api/auth/polycoder/me/progress - Progress for the authenticated polycoder
+ */
+async function getMyPolycoderProgress(req, res) {
+  try {
+    const stats = await progressService.getUserDashboardStats(req.userId);
+    const username = stats?.user?.username;
+
+    if (!username) {
+      return res.status(404).json({
+        error: "No polycoder username on this account",
+      });
+    }
+
+    const progress = await polycoderProgressService.getProgressByUsername(username);
+    res.json(progress);
+  } catch (error) {
+    console.error("Get my polycoder progress error:", error.message);
+    res.status(error.statusCode || 400).json({ error: error.message });
+  }
+}
+
+/**
  * GET /api/progress/dashboard/:userId - Get dashboard stats
  */
 async function getDashboardStats(req, res) {
@@ -229,4 +265,6 @@ module.exports = {
   addTimeSpent,
   markLanguageComplete,
   getDashboardStats,
+  getPolycoderProgress,
+  getMyPolycoderProgress,
 };

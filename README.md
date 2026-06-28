@@ -78,6 +78,54 @@ Example `GET /api/auth/progress/daily-xp` response:
 }
 ```
 
+### Polycoder progress (Postman-friendly JSON)
+
+Import `postman/PolyCode-Polycoder-Progress.postman_collection.json` into Postman.
+
+- `GET /api/auth/polycoder/:username/progress` — full progress for a polycoder (PolyCode username)
+- `GET /api/auth/polycoder/me/progress` — same payload for the logged-in user (`Authorization: Bearer <token>`)
+
+Example `GET /api/auth/polycoder/jane_dev/progress`:
+
+```json
+{
+  "polycoder": "jane_dev",
+  "userId": "665f1a2b3c4d5e6f7a8b9c0d",
+  "profile": {
+    "id": "665f1a2b3c4d5e6f7a8b9c0d",
+    "username": "jane_dev",
+    "firstName": "Jane",
+    "lastName": "Dev",
+    "preferredLanguages": ["Python"],
+    "currentStreak": 3,
+    "highestStreak": 7
+  },
+  "summary": {
+    "languagesStarted": 2,
+    "languagesCompleted": 0,
+    "languagesInProgress": 1,
+    "totalMinutesSpent": 45,
+    "totalDocumentsCompleted": 12,
+    "completedLessonsCount": 8,
+    "oopsCppTotalXp": 120,
+    "dailyXpTotal": 128,
+    "currentStreak": 3,
+    "highestStreak": 7
+  },
+  "languages": [],
+  "courses": {
+    "oopsCpp": null
+  },
+  "dailyXp": {
+    "days": [],
+    "totalXp": 0,
+    "unreadDays": 0,
+    "readBonusXp": 3
+  },
+  "generatedAt": "2026-06-27T12:00:00.000Z"
+}
+```
+
 ### File Operations
 
 - **Auto-discovery** - Scans data folder for documentation

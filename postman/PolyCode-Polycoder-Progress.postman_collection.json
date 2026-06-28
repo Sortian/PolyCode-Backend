@@ -1,0 +1,87 @@
+{
+  "info": {
+    "name": "PolyCode — Polycoder Progress",
+    "description": "Fetch PolyCode learning progress as JSON by polycoder username.\n\nImport environments from this folder:\n- PolyCode-Local.postman_environment.json → baseUrl http://localhost:5000\n- PolyCode-Production.postman_environment.json → baseUrl https://poly-code-backend.vercel.app\n\nWebsite https://code.quantumlogicslimited.com is the React frontend only. API calls go to baseUrl (Vercel backend), not the website domain.\n\nEndpoints:\n- GET /api/auth/polycoder/:username/progress (public)\n- GET /api/auth/polycoder/me/progress (Bearer token)\n- POST /api/auth/login",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000"
+    },
+    {
+      "key": "polycoderUsername",
+      "value": "amina"
+    },
+    {
+      "key": "authToken",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Login (get token)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"you@example.com\",\n  \"password\": \"your_password\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.token) {",
+              "  pm.collectionVariables.set('authToken', json.token);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get polycoder progress by username",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/polycoder/{{polycoderUsername}}/progress",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "polycoder", "{{polycoderUsername}}", "progress"]
+        }
+      }
+    },
+    {
+      "name": "Get my polycoder progress (auth)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/polycoder/me/progress",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "polycoder", "me", "progress"]
+        }
+      }
+    }
+  ]
+}
