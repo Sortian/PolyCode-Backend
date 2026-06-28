@@ -204,6 +204,11 @@ async function markLanguageComplete(req, res) {
   }
 }
 
+function sendPolycoderProgress(res, progress) {
+  res.set("Content-Type", "application/json; charset=utf-8");
+  res.send(`${JSON.stringify(progress, null, 2)}\n`);
+}
+
 /**
  * GET /api/auth/polycoder/:username/progress - Full progress JSON for a polycoder
  */
@@ -211,7 +216,7 @@ async function getPolycoderProgress(req, res) {
   try {
     const { username } = req.params;
     const progress = await polycoderProgressService.getProgressByUsername(username);
-    res.json(progress);
+    sendPolycoderProgress(res, progress);
   } catch (error) {
     console.error("Get polycoder progress error:", error.message);
     res.status(error.statusCode || 400).json({ error: error.message });
@@ -233,7 +238,7 @@ async function getMyPolycoderProgress(req, res) {
     }
 
     const progress = await polycoderProgressService.getProgressByUsername(username);
-    res.json(progress);
+    sendPolycoderProgress(res, progress);
   } catch (error) {
     console.error("Get my polycoder progress error:", error.message);
     res.status(error.statusCode || 400).json({ error: error.message });

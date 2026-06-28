@@ -11,17 +11,95 @@ function isValidUsername(username) {
   return /^[a-z0-9_][a-z0-9_.-]{2,29}$/.test(username);
 }
 
-function serializeDoc(doc) {
-  if (!doc) return null;
-  if (typeof doc.toObject === "function") {
-    const value = doc.toObject({ versionKey: false });
-    delete value.__v;
-    return value;
-  }
-  return doc;
+function formatDate(value) {
+  if (!value) return null;
+  return new Date(value).toISOString();
 }
 
-function buildSummary({ user, languageProgress, oopsCppProgress, dailyXp }) {
+function serializeLanguageTrack(entry) {
+  if (!entry) return null;
+
+  return {
+    language: entry.language,
+    status: entry.status || "not-started",
+    progressPercent: entry.progressPercentage ?? 0,
+    minutesSpent: entry.totalMinutesSpent ?? 0,
+    currentStreak: entry.currentStreak ?? 0,
+    highestStreak: entry.highestStreak ?? 0,
+    lastAccessedModule: entry.lastAccessedModule ?? null,
+    completedModules: entry.completedModules ?? [],
+    completedDocuments: (entry.completedDocuments ?? []).map((doc) => ({
+      path: doc.path,
+      title: doc.title,
+      completedAt: formatDate(doc.completedAt),
+    })),
+    bookmarksCount: entry.bookmarkedDocuments?.length ?? 0,
+  };
+}
+
+function serializeOopsCpp(course) {
+  if (!course) return null;
+
+  return {
+    courseName: "Object-Oriented C++",
+    courseId: "oops-cpp",
+    lastLessonId: course.lastLessonId ?? null,
+    stats: {
+      totalXp: course.totalXp ?? 0,
+      minutesSpent: course.totalMinutesSpent ?? 0,
+      currentStreak: course.currentStreak ?? 0,
+      lastActive: formatDate(course.lastActiveDate),
+      bookmarksCount: course.bookmarks?.length ?? 0,
+    },
+    completedLessons: (course.completedLessons ?? []).map((lesson) => ({
+      lessonId: lesson.lessonId,
+      title: lesson.title,
+      chapter: lesson.chapterTitle,
+      chapterId: lesson.chapterId,
+      xp: lesson.xp ?? 0,
+      completedAt: formatDate(lesson.completedAt),
+    })),
+    savedCode: (course.savedCode ?? []).map((item) => ({
+      lessonId: item.lessonId,
+      updatedAt: formatDate(item.updatedAt),
+      code: item.code ?? "",
+    })),
+    notes: (course.notes ?? []).map((item) => ({
+      lessonId: item.lessonId,
+      updatedAt: formatDate(item.updatedAt),
+      note: item.note ?? "",
+    })),
+    bookmarks: course.bookmarks ?? [],
+  };
+}
+
+function serializeDailyXp(dailyXp) {
+  if (!dailyXp) {
+    return {
+      totalXp: 0,
+      unreadDays: 0,
+      readBonusXp: 3,
+      recentDays: [],
+    };
+  }
+
+  return {
+    totalXp: dailyXp.totalXp ?? 0,
+    unreadDays: dailyXp.unreadDays ?? 0,
+    readBonusXp: dailyXp.readBonusXp ?? 3,
+    recentDays: (dailyXp.days ?? []).map((day) => ({
+      date: day.date,
+      lessonsCompleted: day.lessonsCompleted ?? 0,
+      courses: day.courses ?? [],
+      xpEarned: day.xpEarned ?? 0,
+      lessonXp: day.lessonXp ?? 0,
+      readBonusXp: day.readBonusXp ?? 0,
+      read: Boolean(day.read),
+    })),
+  };
+}
+
+function buildOverview({ user, languageProgress, oopsCppProgress, dailyXp }) {
   const languages = languageProgress || [];
   const oops = oopsCppProgress || {};
 
@@ -80,19 +158,24 @@ async function getProgressByUsername(username) {
     dailyXpService.getDailyXp(userId),
   ]);
 
+  const firstName = user.firstName || "";
+  const lastName = user.lastName || "";
+  const displayName = [firstName, lastName].filter(Boolean).join(" ") || polycoder;
+
   const profile = {
     id: String(userId),
     username: user.username,
-    firstName: user.firstName || "",
-    lastName: user.lastName || "",
+    displayName,
+    firstName,
+    lastName,
     preferredLanguages: user.preferredLanguages || [],
     currentStreak: user.currentStreak || 0,
     highestStreak: user.highestStreak || 0,
-    lastLogin: user.lastLogin || null,
-    createdAt: user.createdAt || null,
+    lastLogin: formatDate(user.lastLogin),
+    memberSince: formatDate(user.createdAt),
   };
 
-  const summary = buildSummary({
+  const overview = buildOverview({
     user,
     languageProgress,
     oopsCppProgress,
@@ -101,15 +184,16 @@ async function getProgressByUsername(username) {
 
   return {
     polycoder,
-    userId: String(userId),
-    profile,
-    summary,
-    languages: (languageProgress || []).map(serializeDoc),
-    courses: {
-      oopsCpp: serializeDoc(oopsCppProgress),
-    },
-    dailyXp,
     generatedAt: new Date().toISOString(),
+    profile,
+    overview,
+    languageTracks: (languageProgress || [])
+      .map(serializeLanguageTrack)
+      .filter(Boolean),
+    courses: {
+      oopsCpp: serializeOopsCpp(oopsCppProgress),
+    },
+    dailyXp: serializeDailyXp(dailyXp),
   };
 }
 
